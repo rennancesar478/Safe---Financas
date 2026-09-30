@@ -15,7 +15,7 @@ try:
 except ImportError:
     pass
 
-BANCO = "safe_financas.db"  # arquivo criado automaticamente ao lado do api.py
+BANCO = os.getenv("DATABASE_PATH", "safe_financas.db")
 
 # Configuração de e-mail (vem do arquivo .env)
 SMTP_HOST = os.getenv("SMTP_HOST", "smtp.gmail.com")
@@ -28,7 +28,7 @@ MAX_TENTATIVAS = 5
 FORMATO_DATA = "%Y-%m-%d %H:%M:%S"
 
 app = Flask(__name__)
-CORS(app)
+CORS(app, resources={r"/api/*": {"origins": os.getenv("FRONTEND_ORIGINS", "http://localhost:5173").split(",")}})
 
 
 # --- BANCO DE DADOS ---
