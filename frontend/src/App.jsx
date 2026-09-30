@@ -38,56 +38,116 @@ async function chamar(caminho, corpo, token) {
 }
 
 function Acesso({ aoEntrar }) {
+  // modo: login | cadastro | esqueci | redefinir
   const [modo, setModo] = useState("login");
-  const [campos, setCampos] = useState({ nome: "", email: "", senha: "" });
+  const [campos, setCampos] = useState({ nome: "", email: "", senha: "", confirmar: "", codigo: "" });
   const [mensagem, setMensagem] = useState("");
+  const [aviso, setAviso] = useState("");
+  const [enviando, setEnviando] = useState(false);
 
   const mudar = (e) => setCampos({ ...campos, [e.target.name]: e.target.value });
+  const irPara = (novoModo) => {
+    setModo(novoModo);
+    setMensagem("");
+    setAviso("");
+  };
 
   async function enviar(e) {
     e.preventDefault();
     setMensagem("");
+    setAviso("");
+    setEnviando(true);
     try {
-      aoEntrar(await chamar(modo === "login" ? "/login" : "/cadastro", campos));
+      if (modo === "login") {
+        aoEntrar(await chamar("/login", campos));
+      } else if (modo === "cadastro") {
+        if (campos.senha !== campos.confirmar) throw new Error("As senhas não são iguais.");
+        aoEntrar(await chamar("/cadastro", campos));
+      } else if (modo === "esqueci") {
+        const r = await chamar("/esqueci-senha", { email: campos.email });
+        setModo("redefinir");
+        setAviso(r.mensagem);
+      } else {
+        if (campos.senha !== campos.confirmar) throw new Error("As senhas não são iguais.");
+        const r = await chamar("/redefinir-senha", {
+          email: campos.email, codigo: campos.codigo, nova_senha: campos.senha,
+        });
+        setCampos({ ...campos, senha: "", confirmar: "", codigo: "" });
+        setModo("login");
+        setAviso(r.mensagem);
+      }
     } catch (err) {
       setMensagem(err.message);
+    } finally {
+      setEnviando(false);
     }
   }
+
+  const textoBotao = {
+    login: "Entrar", cadastro: "Criar conta", esqueci: "Enviar código", redefinir: "Salvar nova senha",
+  }[modo];
 
   return (
     <main className="acesso">
       <h1>Safe Finanças</h1>
       <p className="sub">Saiba para onde vai o seu dinheiro.</p>
 
-      <div className="abas" role="tablist">
-        <button role="tab" aria-selected={modo === "login"} onClick={() => setModo("login")}>
-          Entrar
-        </button>
-        <button role="tab" aria-selected={modo === "cadastro"} onClick={() => setModo("cadastro")}>
-          Criar conta
-        </button>
-      </div>
+      {modo === "login" || modo === "cadastro" ? (
+        <div className="abas" role="tablist">
+          <button role="tab" aria-selected={modo === "login"} onClick={() => irPara("login")}>Entrar</button>
+          <button role="tab" aria-selected={modo === "cadastro"} onClick={() => irPara("cadastro")}>Criar conta</button>
+        </div>
+      ) : (
+        <h2>{modo === "esqueci" ? "Esqueceu a senha?" : "Crie uma nova senha"}</h2>
+      )}
 
       <form onSubmit={enviar}>
+        {modo === "esqueci" && (
+          <p className="ajuda">Digite o e-mail da sua conta e enviaremos um código de 6 dígitos.</p>
+        )}
         {modo === "cadastro" && (
           <label>
             Nome de usuário
-            <input name="nome" value={campos.nome} onChange={mudar} autoComplete="username" />
+            <input name="nome" value={campos.nome} onChange={mudar} autoComplete="username" required />
           </label>
         )}
         <label>
           E-mail
-          <input name="email" type="email" value={campos.email} onChange={mudar} autoComplete="email" />
+          <input name="email" type="email" value={campos.email} onChange={mudar} autoComplete="email" required />
         </label>
-        <label>
-          Senha
-          <input name="senha" type="password" value={campos.senha} onChange={mudar} autoComplete="current-password" />
-        </label>
+        {modo === "redefinir" && (
+          <label>
+            Código recebido por e-mail
+            <input name="codigo" inputMode="numeric" maxLength={6} value={campos.codigo} onChange={mudar}
+              autoComplete="one-time-code" placeholder="000000" required />
+          </label>
+        )}
+        {modo !== "esqueci" && (
+          <label>
+            {modo === "redefinir" ? "Nova senha" : "Senha"}
+            <input name="senha" type="password" value={campos.senha} onChange={mudar} required
+              autoComplete={modo === "login" ? "current-password" : "new-password"} />
+          </label>
+        )}
+        {(modo === "cadastro" || modo === "redefinir") && (
+          <label>
+            Confirmar senha
+            <input name="confirmar" type="password" value={campos.confirmar} onChange={mudar}
+              autoComplete="new-password" required />
+          </label>
+        )}
+        {aviso && <p className="aviso" role="status">{aviso}</p>}
         {mensagem && <p className="erro" role="alert">{mensagem}</p>}
-        <button className="primario" type="submit">
-          {modo === "login" ? "Entrar" : "Criar conta"}
-        </button>
+        <button className="primario" type="submit" disabled={enviando}>{textoBotao}</button>
       </form>
+
+      <div className="acoes">
+        {modo === "login" && <button className="link" onClick={() => irPara("esqueci")}>Esqueci minha senha</button>}
+        {modo === "redefinir" && <button className="link" onClick={() => irPara("esqueci")}>Não recebi o código</button>}
+        {(modo === "esqueci" || modo === "redefinir") && (
+          <button className="link" onClick={() => irPara("login")}>Voltar para o login</button>
+        )}
+      </div>
     </main>
   );
 }

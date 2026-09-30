@@ -115,3 +115,10 @@ tr.selecionada td { background: #f1f6f3; }
 .barra { height: 6px; background: #e3e9e5; border-radius: 3px; margin-bottom: .25rem; min-width: 90px; }
 .barra span { display: block; height: 100%; border-radius: 3px; }
 .dica { color: var(--suave); font-size: .85rem; margin: 1rem 0 0; }
+
+/* Recuperação de senha */
+.acesso h2 { margin: 0 0 1rem; }
+.ajuda { color: var(--suave); margin: 0 0 1rem; }
+.aviso { color: var(--entrada); font-size: .9rem; margin: 0 0 1rem; }
+.acoes { display: flex; justify-content: space-between; gap: 1rem; margin-top: 1.25rem; }
+.primario:disabled { opacity: .6; cursor: wait; }
