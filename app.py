@@ -69,7 +69,6 @@ elif opcao == "1":
             print("E-mail ou senha incorretos!")
 
 
-# --- PAINEL FINANCEIRO PROFISSIONAL ---
 if logado:
     while True:
         print("\n=== PAINEL FINANCEIRO ===")
